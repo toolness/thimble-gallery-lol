@@ -48,31 +48,30 @@
           and featureless.</p>
       </div>
 
-      <!-- Example row of columns -->
-      <ul class="thumbnails"></ul>
-
+      <script type="text/x-handlebars">
+      <ul class="thumbnails">
+        {{#each App.thimblePageController.pages}}
+        <li class="span3">
+          <div class="thumbnail">
+            <a {{bindAttr href="viewURL"}}><img
+              {{bindAttr src="thumbnailURL"}}></a>
+          </div>
+        </li>
+        {{/each}}
+      </ul>
+      </script>
+      
       <hr>
 
       <a href="" id="more" class="btn btn-inverse" style="display: none; float: right;">More&hellip;</a>
       
     </div> <!-- /container -->
-
-    <!-- Le templates -->
-    <script type="text/x-handlebars" data-template-name="thumbnail">
-    <li class="span3">
-      <div class="thumbnail">
-        <a {{bindAttr href="viewURL"}}><img
-          {{bindAttr src="thumbnailURL"}}></a>
-      </div>
-    </li>
-    </script>
     
     <!-- Le javascript
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
     <script src="jquery.min.js"></script>
     <script src="ember.min.js"></script>
-    
     <script src="main.js"></script>
   </body>
 </html>

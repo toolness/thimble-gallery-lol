@@ -1,6 +1,20 @@
 var PAGE_SIZE = 20;
 
-window.App = Ember.Application.create();
+var App = Ember.Application.create();
+
+var ThimblePage = Ember.Object.extend({
+  key: null,
+  viewURL: function() {
+    return 'https://thimble.webmaker.org/p/' + this.get('key');
+  }.property('key'),
+  thumbnailURL: function() {
+    return '/images/' + this.get('key') + '.png';
+  }.property('key')
+});
+
+App.thimblePageController = Ember.Object.create({
+  pages: []
+});
 
 function show(end) {
   var start = end - PAGE_SIZE;
@@ -11,12 +25,9 @@ function show(end) {
   $.getJSON('/unique/' + start + '/' + PAGE_SIZE, function(data) {
     data.reverse();
     data.forEach(function(key) {
-      var view = Ember.View.create({
-        templateName: "thumbnail",
-        viewURL: 'https://thimble.webmaker.org/p/' + key,
-        thumbnailURL: '/images/' + key + '.png'
-      });
-      view.appendTo('ul.thumbnails');
+      App.thimblePageController.pages.pushObject(ThimblePage.create({
+        key: key
+      }));
     });
   });
 }
