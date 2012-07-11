@@ -66,9 +66,14 @@ function findManyHashes(start, count, cb) {
     findHash(i, done);
 }
 
-function findAllHashes(start, batchSize, retryDelay) {
-  var allHashes = {};
-  var uniqueHashes = 0;
+function PublishedPageTracker(options) {
+  options = options || {};
+  
+  var start = options.startIndex || 1,
+      batchSize = options.batchSize || 10,
+      retryDelay = options.retryDelay || 30000,
+      allHashes = {},
+      uniqueHashes = 0;
   
   function getNextBatch(i) {
     findManyHashes(i, batchSize, function(errors, hashes) {
@@ -93,7 +98,11 @@ function findAllHashes(start, batchSize, retryDelay) {
   }
   
   getNextBatch(start);
+
+  return {
+    allHashes: allHashes
+  };
 }
 
 if (!module.parent)
-  findAllHashes(1, 10, 30000);
+  PublishedPageTracker();
