@@ -8,6 +8,12 @@ var express = require('express'),
 
 var ppt = PublishedPageTracker();
 
+if (config.auth)
+  app.use(express.basicAuth(function(username, password) {
+    return (username == config.auth.username &&
+            password == config.auth.password);
+  }));
+
 function lazyRender(key, next) {
   function callAllNexts() {
     var nexts = lazyRenders[key];

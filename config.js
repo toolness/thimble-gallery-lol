@@ -3,5 +3,9 @@ module.exports = {
   imageDir: "../images",
   hashDir: "../hashes",
   screencapPort: 9012,
-  secret: "grGORef"
+  secret: "grGORef",
+  auth: {
+    username: 'blarg',
+    password: 'blarg'
+  }
 };
