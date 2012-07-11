@@ -38,10 +38,10 @@ function lazyRender(key, next) {
 }
 
 app.use('/images/', function(req, res, next) {
-  var match = req.path.match(/\/([A-Za-z0-9]+)\.jpg/);
+  var match = req.path.match(/\/([A-Za-z0-9]+)\.png/);
   if (match) {
     var key = match[1];
-    return fs.exists(config.imageDir + '/' + key + '.jpg', function(exists) {
+    return fs.exists(config.imageDir + '/' + key + '.png', function(exists) {
       if (exists)
         return next();
       ppt.pageExists(key, function(exists) {

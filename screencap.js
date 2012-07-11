@@ -44,7 +44,7 @@ function processNextJob() {
     return;
   var job = jobs.pop();
   var url = config.baseThimbleURL + job.key;
-  var filename = config.imageDir + "/" + job.key + ".jpg";
+  var filename = config.imageDir + "/" + job.key + ".png";
   isProcessingJob = true;
   console.log("loading " + url);
   page.open(url, function(status) {
