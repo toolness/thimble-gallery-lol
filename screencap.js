@@ -14,6 +14,13 @@ page.viewportSize = {
   height: 600
 };
 
+page.clipRect = {
+  top: 0,
+  left: 0,
+  width: 800,
+  height: 600
+};
+
 service = server.listen(config.screencapPort, function(request, response) {
   var match = request.url.match(/^\/(.+)\/([A-Za-z0-9]+)$/);
   if (!match || match[1] != config.secret) {

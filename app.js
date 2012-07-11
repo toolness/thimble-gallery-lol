@@ -70,4 +70,5 @@ app.get('/unique/slice', function(req, res) {
     return ppt.allHashes[hash];
   }));
 });
+app.use(express.static(__dirname + '/static'));
 app.listen(3000);
