@@ -1,46 +1,66 @@
 <!DOCTYPE html>
-<meta charset="utf-8">
-<title>Thimble Published Page Viewer</title>
-<style>
-img {
-  width: 320px;
-}
-</style>
-<div id="thumbnails"></div>
-<a href="" id="more" style="display: none">More&hellip;</a>
-<script src="jquery.min.js"></script>
-<script>
-var PAGE_SIZE = 20;
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Thimble Gallery LOL</title>
 
-function show(end) {
-  var start = end - PAGE_SIZE;
-  $("#more").attr("href", "?p=" + start).show();
-  $.getJSON('/unique/' + start + '/' + PAGE_SIZE, function(data) {
-    data.reverse();
-    data.forEach(function(key) {
-      var a = $('<a></a>')
-        .attr('href', 'https://thimble.webmaker.org/p/' + key)
-        .appendTo('#thumbnails');
-      var img = $('<img>')
-        .attr('src', '/images/' + key + '.png')
-        .appendTo(a);
-    });
-  });
-}
+    <!-- Le styles -->
+    <link href="bootstrap/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      
+      ul.thumbnails img {
+        width: 210px;
+        height: 158px;
+      }
+    </style>
+  </head>
 
-$(window).ready(function() {
-  // http://stevenbenner.com/?p=634
-  var queryString = {};
-  window.location.href.replace(
-    new RegExp("([^?=&]+)(=([^&]*))?", "g"),
-    function($0, $1, $2, $3) { queryString[$1] = decodeURIComponent($3); }
-  );
-  var end = parseInt(queryString.p);
-  if (!isNaN(end))
-    show(end);
-  else
-    $.getJSON('/stats', function(stats) {
-      show(stats.uniques);
-    });
-});
-</script>
+  <body>
+
+    <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="/">Thimble Gallery LOL</a>
+          <div class="nav-collapse">
+            <ul class="nav">
+              <li class="active"><a href="/">Home</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+
+      <!-- Main hero unit for a primary marketing message or call to action -->
+      <div class="hero-unit">
+        <h1>Thimble Gallery LOL</h1>
+        <p>This is a terribly makeshift Thimble gallery. It is slow
+          and featureless.</p>
+      </div>
+
+      <!-- Example row of columns -->
+      <ul class="thumbnails"></ul>
+
+      <hr>
+
+      <a href="" id="more" class="btn btn-inverse" style="display: none; float: right;">More&hellip;</a>
+      
+    </div> <!-- /container -->
+
+    <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="jquery.min.js"></script>
+    <script src="main.js"></script>
+  </body>
+</html>
