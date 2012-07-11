@@ -19,7 +19,7 @@ function lazyRender(key, next) {
   var renderReq = http.request({
     host: '127.0.0.1',
     port: config.screencapPort,
-    path: '/' + key,
+    path: '/' + config.secret + '/' + key,
     method: 'POST'
   }, function(renderRes) {
     if (renderRes.statusCode == 200) {

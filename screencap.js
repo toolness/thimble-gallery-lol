@@ -15,8 +15,8 @@ page.viewportSize = {
 };
 
 service = server.listen(config.screencapPort, function(request, response) {
-  var match = request.url.match(/\/([A-Za-z0-9]+)/);
-  if (!match) {
+  var match = request.url.match(/^\/(.+)\/([A-Za-z0-9]+)$/);
+  if (!match || match[1] != config.secret) {
     response.statusCode = 404;
     response.write('not found: ' + request.url);
     response.close();
@@ -25,7 +25,7 @@ service = server.listen(config.screencapPort, function(request, response) {
   jobs.push({
     req: request,
     res: response,
-    key: match[1]
+    key: match[2]
   });
   processNextJob();
 });
