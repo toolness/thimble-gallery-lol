@@ -60,15 +60,20 @@ app.use('/images/', function(req, res, next) {
   return next();
 });
 app.use('/images', express.static(config.imageDir));
-app.get('/unique/length', function(req, res) {
-  res.send(Object.keys(ppt.allHashes).length.toString());
+app.get('/stats', function(req, res) {
+  res.send({
+    uniques: Object.keys(ppt.allHashes).length
+  });
 });
-app.get('/unique/slice', function(req, res) {
-  var SLICE_SIZE = 50;
+app.get('/unique/:start/:count', function(req, res) {
+  var MAX_COUNT = 100;
+  var count = parseInt(req.param('count', '0'));
   var start = parseInt(req.param('start', '0'));
-  var end = start + SLICE_SIZE;
+  if (isNaN(count) || count <= 0 || count > MAX_COUNT)
+    count = MAX_COUNT;
   if (isNaN(start))
     start = 0;
+  var end = start + count;
   if (start < 0 && end >= 0)
     end = undefined;
   var chunk = Object.keys(ppt.allHashes).slice(start, end);
