@@ -1,0 +1,11 @@
+{ "name": "thimble-gallery-lol"
+, "description": "lame makeshift thimble gallery."
+, "version": "0.1.0"
+, "private": true
+, "scripts" :
+  { "test" : "node test.js" }
+, "dependencies":
+  { "express": "2.5.x" }
+, "engines":
+  { "node":  "*" }
+}
