@@ -3,11 +3,19 @@ var express = require('express'),
     http = require('http'),
     config = require('./config'),
     PublishedPageTracker = require('./published-page-tracker'),
-    app = express.createServer();
+    app = express.createServer(),
+    lazyRenders = {};
 
 var ppt = PublishedPageTracker();
 
 function lazyRender(key, next) {
+  function callAllNexts() {
+    var nexts = lazyRenders[key];
+    delete lazyRenders[key];
+    nexts.forEach(function(next) { next(); });
+  }
+  if (key in lazyRenders)
+    return lazyRenders[key].push(next);
   var renderReq = http.request({
     host: '127.0.0.1',
     port: config.screencapPort,
@@ -15,17 +23,18 @@ function lazyRender(key, next) {
     method: 'POST'
   }, function(renderRes) {
     if (renderRes.statusCode == 200) {
-      return next();
+      return callAllNexts();
     } else {
       console.log('failed to render', key, renderRes.statusCode);
-      return next();
+      return callAllNexts();
     }
   });
   renderReq.on('error', function(e) {
     console.log('failed to render', key, e);
-    return next();
+    return callAllNexts();
   });
   renderReq.end();
+  lazyRenders[key] = [next];
 }
 
 app.use('/images/', function(req, res, next) {
