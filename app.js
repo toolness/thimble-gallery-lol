@@ -1,108 +1,60 @@
-var rebase = require('./rebase'),
-    https = require('https'),
+var express = require('express'),
     fs = require('fs'),
-    url = require('url'),
-    config = require('./config');
+    http = require('http'),
+    config = require('./config'),
+    PublishedPageTracker = require('./published-page-tracker'),
+    app = express.createServer();
 
-var HASH_DIR = config.hashDir + "/",
-    THIMBLE_URL = url.parse(config.baseThimbleURL);
+var ppt = PublishedPageTracker();
 
-function hashExists(key, cb) {
-  fs.exists(HASH_DIR + key, cb);
-}
-
-function readHash(key, cb) {
-  fs.readFile(HASH_DIR + key, 'utf-8', cb);
-}
-
-function writeHash(key, hash, cb) {
-  fs.writeFile(HASH_DIR + key, hash, 'utf-8', cb);
-}
-
-function findHash(id, cb) {
-  var key = rebase(id);
-  hashExists(key, function(exists) {
-    if (exists)
-      return readHash(key, function(err, hash) {
-        cb(err, id, key, hash);
-      });
-    var req = https.request({
-      host: THIMBLE_URL.hostname,
-      port: 443,
-      path: THIMBLE_URL.pathname + key,
-      method: 'HEAD'
-    }, function(res) {
-      if (res.statusCode == 200) {
-        writeHash(key, res.headers.etag, function(err) {
-          cb(err, id, key, res.headers.etag);
+app.use('/images/', function(req, res, next) {
+  var match = req.path.match(/\/([A-Za-z0-9]+)\.jpg/);
+  if (match) {
+    var key = match[1];
+    return fs.exists(config.imageDir + '/' + key + '.jpg', function(exists) {
+      if (exists)
+        return next();
+      ppt.pageExists(key, function(exists) {
+        if (!exists)
+          return next();
+        var renderReq = http.request({
+          host: '127.0.0.1',
+          port: config.screencapPort,
+          path: '/' + key,
+          method: 'POST'
+        }, function(renderRes) {
+          if (renderRes.statusCode == 200) {
+            return next();
+          } else {
+            console.log('failed to render', key, renderRes.statusCode);
+            return next();
+          }
         });
-      } else
-        cb("http error " + res.statusCode, id, key, null);
-    });
-    req.end();
-  });
-};
-
-function findManyHashes(start, count, cb) {
-  var numLeft = count;
-  var errors = [];
-  var hashes = {};
-
-  function done(err, id, key, hash) {
-    numLeft--;
-    if (err)
-      errors.push({
-        id: id,
-        err: err
+        renderReq.on('error', function(e) {
+          console.log('failed to render', key, e);
+          return next();
+        });
+        renderReq.end();
       });
-    else
-      hashes[key] = hash;
-
-    if (numLeft == 0)
-      cb(errors, hashes);
-  }
-  
-  for (var i = start; i < start+count; i++)
-    findHash(i, done);
-}
-
-function PublishedPageTracker(options) {
-  options = options || {};
-  
-  var start = options.startIndex || 1,
-      batchSize = options.batchSize || 10,
-      retryDelay = options.retryDelay || 30000,
-      allHashes = {},
-      uniqueHashes = 0;
-  
-  function getNextBatch(i) {
-    findManyHashes(i, batchSize, function(errors, hashes) {
-      Object.keys(hashes).forEach(function(key) {
-        var hash = hashes[key];
-        if (!(hash in allHashes)) {
-          allHashes[hash] = key;
-          uniqueHashes++;
-        }
-      });
-      console.log("got hashes for " + i + " thru " + (i+batchSize) +
-                  "; " + uniqueHashes + " uniques, " + errors.length + 
-                  " errors.");
-      if (errors.length) {
-        console.log("retrying in " + retryDelay + " ms.");
-        setTimeout(function() {
-          getNextBatch(errors[0].id);
-        }, retryDelay);
-      } else
-        getNextBatch(i+batchSize);
     });
   }
-  
-  getNextBatch(start);
-
-  return {
-    allHashes: allHashes
-  };
-}
-
-if (!module.parent)
-  PublishedPageTracker();
+  return next();
+});
+app.use('/images', express.static(config.imageDir));
+app.get('/unique/length', function(req, res) {
+  res.send(Object.keys(ppt.allHashes).length.toString());
+});
+app.get('/unique/slice', function(req, res) {
+  var SLICE_SIZE = 50;
+  var start = parseInt(req.param('start', '0'));
+  var end = start + SLICE_SIZE;
+  if (isNaN(start))
+    start = 0;
+  if (start < 0 && end >= 0)
+    end = undefined;
+  var chunk = Object.keys(ppt.allHashes).slice(start, end);
+  res.send(chunk.map(function(hash) {
+    return ppt.allHashes[hash];
+  }));
+});
+app.listen(3000);

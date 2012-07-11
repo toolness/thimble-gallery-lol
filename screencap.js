@@ -14,8 +14,8 @@ page.viewportSize = {
   height: 600
 };
 
-service = server.listen(9000, function(request, response) {
-  var match = request.url.match(/\/([A-Za-z0-9]+)\/([a-f0-9]+)/);
+service = server.listen(config.screencapPort, function(request, response) {
+  var match = request.url.match(/\/([A-Za-z0-9]+)/);
   if (!match) {
     response.statusCode = 404;
     response.write('not found: ' + request.url);
@@ -25,8 +25,7 @@ service = server.listen(9000, function(request, response) {
   jobs.push({
     req: request,
     res: response,
-    key: match[1],
-    hash: match[2]
+    key: match[1]
   });
   processNextJob();
 });
@@ -38,7 +37,7 @@ function processNextJob() {
     return;
   var job = jobs.pop();
   var url = config.baseThimbleURL + job.key;
-  var filename = config.imageDir + "/" + job.hash + ".jpg";
+  var filename = config.imageDir + "/" + job.key + ".jpg";
   isProcessingJob = true;
   console.log("loading " + url);
   page.open(url, function(status) {
