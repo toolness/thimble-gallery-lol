@@ -7,6 +7,27 @@ var express = require('express'),
 
 var ppt = PublishedPageTracker();
 
+function lazyRender(key, next) {
+  var renderReq = http.request({
+    host: '127.0.0.1',
+    port: config.screencapPort,
+    path: '/' + key,
+    method: 'POST'
+  }, function(renderRes) {
+    if (renderRes.statusCode == 200) {
+      return next();
+    } else {
+      console.log('failed to render', key, renderRes.statusCode);
+      return next();
+    }
+  });
+  renderReq.on('error', function(e) {
+    console.log('failed to render', key, e);
+    return next();
+  });
+  renderReq.end();
+}
+
 app.use('/images/', function(req, res, next) {
   var match = req.path.match(/\/([A-Za-z0-9]+)\.jpg/);
   if (match) {
@@ -17,24 +38,7 @@ app.use('/images/', function(req, res, next) {
       ppt.pageExists(key, function(exists) {
         if (!exists)
           return next();
-        var renderReq = http.request({
-          host: '127.0.0.1',
-          port: config.screencapPort,
-          path: '/' + key,
-          method: 'POST'
-        }, function(renderRes) {
-          if (renderRes.statusCode == 200) {
-            return next();
-          } else {
-            console.log('failed to render', key, renderRes.statusCode);
-            return next();
-          }
-        });
-        renderReq.on('error', function(e) {
-          console.log('failed to render', key, e);
-          return next();
-        });
-        renderReq.end();
+        return lazyRender(key, next);
       });
     });
   }
