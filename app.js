@@ -66,7 +66,7 @@ function findManyHashes(start, count, cb) {
     findHash(i, done);
 }
 
-function findAllHashes(batchSize, keepGoing) {
+function findAllHashes(start, batchSize, retryDelay) {
   var allHashes = {};
   var uniqueHashes = 0;
   
@@ -80,22 +80,20 @@ function findAllHashes(batchSize, keepGoing) {
         }
       });
       console.log("got hashes for " + i + " thru " + (i+batchSize) +
-                  "; " + uniqueHashes + " uniques.");
-      if (!errors.length && (!keepGoing || keepGoing()))
+                  "; " + uniqueHashes + " uniques, " + errors.length + 
+                  " errors.");
+      if (errors.length) {
+        console.log("retrying in " + retryDelay + " ms.");
+        setTimeout(function() {
+          getNextBatch(errors[0].id);
+        }, retryDelay);
+      } else
         getNextBatch(i+batchSize);
     });
   }
   
-  getNextBatch(1);
+  getNextBatch(start);
 }
 
-(function() {
-  if (module.parent)
-    return;
-  var keepGoing = true;
-  process.on('SIGINT', function() {
-    console.log('SIGINT received, will stop at end of current batch.');
-    keepGoing = false;
-  });
-  findAllHashes(25, function() { return keepGoing; });
-})();
+if (!module.parent)
+  findAllHashes(1, 10, 30000);
