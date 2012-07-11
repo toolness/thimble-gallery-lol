@@ -2,7 +2,10 @@ var page = require('webpage').create(),
     system = require('system'),
     server = require('webserver').create(),
     fs = require('fs'),
-    jobs = [];
+    jobs = [],
+    failsSoFar = 0;
+
+var MAX_FAILS = 10;
 
 var config = (function() {
   var module = {};
@@ -74,6 +77,11 @@ function processNextJob() {
       console.log("failed to provide response for " + url + ": " + e);
     }
     
+    if (statusCode == 500 && ++failsSoFar > MAX_FAILS) {
+      console.log("Maximum fails exceeded, bailing.");
+      phantom.exit(1);
+    }
+
     isProcessingJob = false;
     processNextJob();
   });
