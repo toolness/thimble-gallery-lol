@@ -57,10 +57,22 @@
       
     </div> <!-- /container -->
 
+    <!-- Le templates -->
+    <script type="text/x-handlebars" data-template-name="thumbnail">
+    <li class="span3">
+      <div class="thumbnail">
+        <a {{bindAttr href="viewURL"}}><img
+          {{bindAttr src="thumbnailURL"}}></a>
+      </div>
+    </li>
+    </script>
+    
     <!-- Le javascript
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
     <script src="jquery.min.js"></script>
+    <script src="ember.min.js"></script>
+    
     <script src="main.js"></script>
   </body>
 </html>

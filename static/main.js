@@ -1,5 +1,7 @@
 var PAGE_SIZE = 20;
 
+window.App = Ember.Application.create();
+
 function show(end) {
   var start = end - PAGE_SIZE;
   if (start <= 0)
@@ -9,11 +11,12 @@ function show(end) {
   $.getJSON('/unique/' + start + '/' + PAGE_SIZE, function(data) {
     data.reverse();
     data.forEach(function(key) {
-      // 260x180
-      var li = $('<li class="span3"><div class="thumbnail"><a><img></a>' +
-                 '</div></li>').appendTo('ul.thumbnails');
-      $('a', li).attr('href', 'https://thimble.webmaker.org/p/' + key)
-      $('img', li).attr('src', '/images/' + key + '.png');
+      var view = Ember.View.create({
+        templateName: "thumbnail",
+        viewURL: 'https://thimble.webmaker.org/p/' + key,
+        thumbnailURL: '/images/' + key + '.png'
+      });
+      view.appendTo('ul.thumbnails');
     });
   });
 }
