@@ -1,22 +1,35 @@
 var rebase = require('./rebase'),
     https = require('https'),
-    fs = require('fs'),
+    redis = require('redis'),
     url = require('url'),
-    config = require('./config');
+    config = require('./config'),
+    client = redis.createClient(config.redis.port, config.redis.host);
 
 var HASH_DIR = config.hashDir + "/",
-    THIMBLE_URL = url.parse(config.baseThimbleURL);
+    THIMBLE_URL = url.parse(config.baseThimbleURL),
+    REDIS_PREFIX = THIMBLE_URL.hostname + ':';
+
+client.on('error', function(err) {
+  console.log("REDIS ERROR", err);
+});
 
 function hashExists(key, cb) {
-  fs.exists(HASH_DIR + key, cb);
+  client.exists(REDIS_PREFIX + key + ".hash", function(err, exists) {
+    if (err) {
+      console.log("existence check for key", key, "failed with", err);
+      console.log("retrying in 1s");
+      setTimeout(function() { hashExists(key, cb); }, 1000);
+    } else
+      cb(!!exists);
+  });
 }
 
 function readHash(key, cb) {
-  fs.readFile(HASH_DIR + key, 'utf-8', cb);
+  client.get(REDIS_PREFIX + key + ".hash", cb);
 }
 
 function writeHash(key, hash, cb) {
-  fs.writeFile(HASH_DIR + key, hash, 'utf-8', cb);
+  client.set(REDIS_PREFIX + key + ".hash", hash, cb);
 }
 
 function findHash(id, cb) {
@@ -108,6 +121,8 @@ function PublishedPageTracker(options) {
 }
 
 module.exports = PublishedPageTracker;
+PublishedPageTracker.writeHash = writeHash;
+PublishedPageTracker.client = client;
 
 if (!module.parent)
   PublishedPageTracker({verbose: true});

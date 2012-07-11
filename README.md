@@ -2,7 +2,7 @@ This is a terrible makeshift [Thimble][] gallery.
 
 ## Prerequisites
 
-Node and PhantomJS.
+Redis, Node, and PhantomJS.
 
 ## Quick Start
 
