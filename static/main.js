@@ -65,6 +65,19 @@ function showRecentlyPublished(end) {
   });
 }
 
+// http://www.mredkj.com/javascript/nfbasic.html
+function addCommas(nStr) {
+  nStr += '';
+  x = nStr.split('.');
+  x1 = x[0];
+  x2 = x.length > 1 ? '.' + x[1] : '';
+  var rgx = /(\d+)(\d{3})/;
+  while (rgx.test(x1)) {
+    x1 = x1.replace(rgx, '$1' + ',' + '$2');
+  }
+  return x1 + x2;
+}
+
 $(window).ready(function() {
   // http://stevenbenner.com/?p=634
   var queryString = {};
@@ -73,24 +86,25 @@ $(window).ready(function() {
     function($0, $1, $2, $3) { queryString[$1] = decodeURIComponent($3); }
   );
   
-  if (location.pathname == '/' || location.pathname == '/index.html') {
-    var end = parseInt(queryString.p);
-    if (!isNaN(end))
-      showRecentlyPublished(end);
-    else
-      $.getJSON('/stats', function(stats) {
+  $.getJSON('/stats', function(stats) {
+    $("#page-count").text(addCommas(stats.uniques));
+    if (location.pathname == '/' || location.pathname == '/index.html') {
+      var end = parseInt(queryString.p);
+      if (!isNaN(end))
+        showRecentlyPublished(end);
+      else
         showRecentlyPublished(stats.uniques);
-      });
-    $(".nav-home").addClass("active");
-  } else if (location.pathname == '/popular') {
-    jQuery.getJSON('/favorites/popular', showThumbnails);
-    $(".nav-popular").addClass("active");
-  } else if (location.pathname == '/recent-favorites') {
-    jQuery.getJSON('/favorites/activity', showThumbnails);
-    $(".nav-recent-favorites").addClass("active");
-  } else {
-    var match = location.pathname.match(/\/p\/([A-Za-z0-9]+)/);
-    if (match)
-      jQuery.getJSON('/favorites/scores?keys=' + match[1], showThumbnails);
-  }
+      $(".nav-home").addClass("active");
+    } else if (location.pathname == '/popular') {
+      jQuery.getJSON('/favorites/popular', showThumbnails);
+      $(".nav-popular").addClass("active");
+    } else if (location.pathname == '/recent-favorites') {
+      jQuery.getJSON('/favorites/activity', showThumbnails);
+      $(".nav-recent-favorites").addClass("active");
+    } else {
+      var match = location.pathname.match(/\/p\/([A-Za-z0-9]+)/);
+      if (match)
+        jQuery.getJSON('/favorites/scores?keys=' + match[1], showThumbnails);
+    }
+  });
 });
