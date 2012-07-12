@@ -61,6 +61,10 @@ app.get('/recent-favorites', function(req, res) {
   sendIndexHTML(res);
 });
 
+app.get('/your-favorites', function(req, res) {
+  sendIndexHTML(res);
+});
+
 app.get('/p/:id', function(req, res) {
   var key = req.param('id', 'nonexistent');
   ppt.pageExists(key, function(exists) {

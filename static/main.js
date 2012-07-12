@@ -1,4 +1,5 @@
-var PAGE_SIZE = 20;
+var PAGE_SIZE = 20,
+    FAVORITE_KEY_PREFIX = 'ThimblePage_favorite_';
 
 var App = Ember.Application.create();
 
@@ -30,7 +31,7 @@ function showThumbnails(data) {
     }
   }).appendTo('#thumbnails-splat');
   data.forEach(function(info) {
-    var FAVORITE_KEY = 'ThimblePage_favorite_' + info[0];
+    var FAVORITE_KEY = FAVORITE_KEY_PREFIX + info[0];
     var page = ThimblePage.create({
       key: info[0],
       score: info[1],
@@ -101,6 +102,15 @@ $(window).ready(function() {
     } else if (location.pathname == '/recent-favorites') {
       jQuery.getJSON('/favorites/activity', showThumbnails);
       $(".nav-recent-favorites").addClass("active");
+    } else if (location.pathname == '/your-favorites') {
+      var yourFaves = [];
+      for (var key in localStorage)
+        if (key.indexOf(FAVORITE_KEY_PREFIX) == 0)
+          yourFaves.push(key.slice(FAVORITE_KEY_PREFIX.length));
+      if (yourFaves.length)
+        jQuery.getJSON('/favorites/scores?keys=' + yourFaves.join(','),
+                       showThumbnails);
+      $(".nav-your-favorites").addClass("active");
     } else {
       var match = location.pathname.match(/\/p\/([A-Za-z0-9]+)/);
       if (match)
