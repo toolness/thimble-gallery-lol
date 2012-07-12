@@ -11,7 +11,7 @@ describe('config.imageDir', function() {
 
 describe('redis', function() {
   it('should respond to PING', function(done) {
-    var client = PublishedPageTracker.client;
+    var client = PublishedPageTracker.makeRedisClient(config.redis);
 
     client.ping(function(err, response) {
       expect(err).to.be(null);

@@ -2,81 +2,105 @@ var rebase = require('./rebase'),
     https = require('https'),
     redis = require('redis'),
     url = require('url'),
-    config = require('./config'),
-    client = redis.createClient(config.redis.port, config.redis.host);
+    globalConfig = require('./config');
 
-var HASH_DIR = config.hashDir + "/",
-    THIMBLE_URL = url.parse(config.baseThimbleURL),
-    REDIS_PREFIX = THIMBLE_URL.hostname + ':';
-
-client.on('error', function(err) {
-  console.log("REDIS ERROR", err);
-});
-
-function hashExists(key, cb) {
-  client.exists(REDIS_PREFIX + key + ".hash", function(err, exists) {
-    if (err) {
-      console.log("existence check for key", key, "failed with", err);
-      console.log("retrying in 1s");
-      setTimeout(function() { hashExists(key, cb); }, 1000);
-    } else
-      cb(!!exists);
+function makeRedisClient(config) {
+  var client = redis.createClient(config.port, config.host);
+  client.on('error', function(err) {
+    console.log("REDIS ERROR", err);
   });
+  return client;
 }
 
-function readHash(key, cb) {
-  client.get(REDIS_PREFIX + key + ".hash", cb);
-}
+function HashFinder(options) {
+  options = options || {};
 
-function writeHash(key, hash, cb) {
-  client.set(REDIS_PREFIX + key + ".hash", hash, cb);
-}
+  var idToKey = options.idToKey || rebase,
+      baseThimbleURL = options.baseThimbleURL || globalConfig.baseThimbleURL,
+      client = options.client || makeRedisClient(globalConfig.redis);
 
-function findHash(id, cb) {
-  var key = rebase(id);
-  hashExists(key, function(exists) {
-    if (exists)
-      return readHash(key, function(err, hash) {
-        cb(err, id, key, hash);
-      });
-    var req = https.request({
-      host: THIMBLE_URL.hostname,
-      port: 443,
-      path: THIMBLE_URL.pathname + key,
-      method: 'HEAD'
-    }, function(res) {
-      if (res.statusCode == 200) {
-        writeHash(key, res.headers.etag, function(err) {
-          cb(err, id, key, res.headers.etag);
-        });
+  var THIMBLE_URL = url.parse(baseThimbleURL),
+      REDIS_PREFIX = THIMBLE_URL.hostname + ':';
+
+  function hashExists(key, cb) {
+    client.exists(REDIS_PREFIX + key + ".hash", function(err, exists) {
+      if (err) {
+        console.log("existence check for key", key, "failed with", err);
+        console.log("retrying in 1s");
+        setTimeout(function() { hashExists(key, cb); }, 1000);
       } else
-        cb("http error " + res.statusCode, id, key, null);
+        cb(!!exists);
     });
-    req.end();
-  });
-};
+  }
 
-function findManyHashes(start, count, cb) {
-  var numLeft = count;
-  var errors = [];
-  var hashes = {};
+  function readHash(key, cb) {
+    client.get(REDIS_PREFIX + key + ".hash", cb);
+  }
 
-  function done(err, id, key, hash) {
-    numLeft--;
-    if (err)
-      errors.push({
-        id: id,
-        err: err
+  function writeHash(key, hash, cb) {
+    client.set(REDIS_PREFIX + key + ".hash", hash, cb);
+  }
+
+  function findHash(id, cb) {
+    var key = idToKey(id);
+    hashExists(key, function(exists) {
+      if (exists)
+        return readHash(key, function(err, hash) {
+          cb(err, id, key, hash);
+        });
+      var req = https.request({
+        host: THIMBLE_URL.hostname,
+        port: 443,
+        path: THIMBLE_URL.pathname + key,
+        method: 'HEAD'
+      }, function(res) {
+        if (res.statusCode == 200) {
+          writeHash(key, res.headers.etag, function(err) {
+            cb(err, id, key, res.headers.etag);
+          });
+        } else
+          cb("http error " + res.statusCode, id, key, null);
       });
-    else
-      hashes[key] = hash;
+      req.end();
+    });
+  };
 
-    if (numLeft == 0)
-      cb(errors, hashes);
+  function findManyHashes(start, count, cb) {
+    var numLeft = count;
+    var errors = [];
+    var hashes = {};
+
+    function done(err, id, key, hash) {
+      numLeft--;
+      if (err)
+        errors.push({
+          id: id,
+          err: err
+        });
+      else
+        hashes[key] = hash;
+
+      if (numLeft == 0)
+        cb(errors, hashes);
+    }
+  
+    for (var i = start; i < start+count; i++)
+      findHash(i, done);
   }
   
-  for (var i = start; i < start+count; i++)
-    findHash(i, done);
+  return {
+    findManyHashes: findManyHashes,
+    hashExists: hashExists,
+    readHash: readHash,
+    writeHash: writeHash,
+    flushAllHashes: function(cb) {
+      client.keys(REDIS_PREFIX + "*", function(err, keys) {
+        if (err)
+          return cb(err);
+        client.del(keys, function(err) { cb(err); });
+      });
+    }
+  };
 }
 
 function PublishedPageTracker(options) {
@@ -86,10 +110,11 @@ function PublishedPageTracker(options) {
       batchSize = options.batchSize || 10,
       retryDelay = options.retryDelay || 30000,
       allHashes = {},
-      uniqueHashes = 0;
+      uniqueHashes = 0,
+      hashFinder = options.hashFinder || HashFinder();
   
   function getNextBatch(i) {
-    findManyHashes(i, batchSize, function(errors, hashes) {
+    hashFinder.findManyHashes(i, batchSize, function(errors, hashes) {
       Object.keys(hashes).forEach(function(key) {
         var hash = hashes[key];
         if (!(hash in allHashes)) {
@@ -115,14 +140,14 @@ function PublishedPageTracker(options) {
   getNextBatch(start);
 
   return {
-    pageExists: hashExists,
+    pageExists: hashFinder.hashExists,
     allHashes: allHashes
   };
 }
 
 module.exports = PublishedPageTracker;
-PublishedPageTracker.writeHash = writeHash;
-PublishedPageTracker.client = client;
+PublishedPageTracker.makeRedisClient = makeRedisClient;
+PublishedPageTracker.HashFinder = HashFinder;
 
 if (!module.parent)
   PublishedPageTracker({verbose: true});
