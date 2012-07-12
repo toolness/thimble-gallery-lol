@@ -20,44 +20,48 @@ var ThimblePage = Ember.Object.extend({
   }.property('key')
 });
 
-function show(end) {
+function showThumbnails(data) {
+  var thumbnails = Ember.View.create({
+    templateName: 'thumbnails',
+    pages: [],
+    toggleFavorite: function(event) {
+      var page = event.context;
+      page.set('isFavorite', !page.get('isFavorite'));
+    }
+  }).appendTo('#thumbnails-splat');
+  data.forEach(function(info) {
+    var FAVORITE_KEY = 'ThimblePage_favorite_' + info[0];
+    var page = ThimblePage.create({
+      key: info[0],
+      score: info[1],
+      isFavorite: FAVORITE_KEY in localStorage
+    });
+    page.addObserver('isFavorite', function() {
+      if (this.get('isFavorite')) {
+        try { localStorage[FAVORITE_KEY] = "YUP"; } catch (e) {}
+        jQuery.post('/favorite/' + this.get('key'), function() {
+          page.set('score', page.get('score') + 1);
+        });
+      } else {
+        delete localStorage[FAVORITE_KEY];
+        jQuery.post('/unfavorite/' + this.get('key'), function() {
+          page.set('score', page.get('score') - 1);
+        });
+      }
+    });
+    thumbnails.pages.pushObject(page);
+  });
+}
+
+function showRecentlyPublished(end) {
   var start = end - PAGE_SIZE;
   if (start <= 0)
     start = 1;
   if (start > 1)
     $("#more").attr("href", "?p=" + start).show();
   $.getJSON('/unique/' + start + '/' + PAGE_SIZE, function(data) {
-    var thumbnails = Ember.View.create({
-      templateName: 'thumbnails',
-      pages: [],
-      toggleFavorite: function(event) {
-        var page = event.context;
-        page.set('isFavorite', !page.get('isFavorite'));
-      }
-    }).appendTo('#thumbnails-splat');
     data.reverse();
-    data.forEach(function(info) {
-      var FAVORITE_KEY = 'ThimblePage_favorite_' + info[0];
-      var page = ThimblePage.create({
-        key: info[0],
-        score: info[1],
-        isFavorite: FAVORITE_KEY in localStorage
-      });
-      page.addObserver('isFavorite', function() {
-        if (this.get('isFavorite')) {
-          try { localStorage[FAVORITE_KEY] = "YUP"; } catch (e) {}
-          jQuery.post('/favorite/' + this.get('key'), function() {
-            page.set('score', page.get('score') + 1);
-          });
-        } else {
-          delete localStorage[FAVORITE_KEY];
-          jQuery.post('/unfavorite/' + this.get('key'), function() {
-            page.set('score', page.get('score') - 1);
-          });
-        }
-      });
-      thumbnails.pages.pushObject(page);
-    });
+    showThumbnails(data);
   });
 }
 
@@ -68,11 +72,25 @@ $(window).ready(function() {
     new RegExp("([^?=&]+)(=([^&]*))?", "g"),
     function($0, $1, $2, $3) { queryString[$1] = decodeURIComponent($3); }
   );
-  var end = parseInt(queryString.p);
-  if (!isNaN(end))
-    show(end);
-  else
-    $.getJSON('/stats', function(stats) {
-      show(stats.uniques);
-    });
+  
+  if (location.pathname == '/' || location.pathname == '/index.html') {
+    var end = parseInt(queryString.p);
+    if (!isNaN(end))
+      showRecentlyPublished(end);
+    else
+      $.getJSON('/stats', function(stats) {
+        showRecentlyPublished(stats.uniques);
+      });
+    $(".nav-home").addClass("active");
+  } else if (location.pathname == '/popular') {
+    jQuery.getJSON('/favorites/popular', showThumbnails);
+    $(".nav-popular").addClass("active");
+  } else if (location.pathname == '/recent-favorites') {
+    jQuery.getJSON('/favorites/activity', showThumbnails);
+    $(".nav-recent-favorites").addClass("active");
+  } else {
+    var match = location.pathname.match(/\/p\/([A-Za-z0-9]+)/);
+    if (match)
+      jQuery.getJSON('/favorites/scores?keys=' + match[1], showThumbnails);
+  }
 });

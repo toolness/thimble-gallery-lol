@@ -9,6 +9,8 @@ var express = require('express'),
     ppt = PublishedPageTracker(),
     faves = Favorites(ppt.client, ppt.thimbleHostname);
 
+var STATIC_DIR = __dirname + '/static';
+
 if (config.auth)
   app.use(express.basicAuth(function(username, password) {
     return (username == config.auth.username &&
@@ -43,6 +45,30 @@ function lazyRender(key, next) {
   renderReq.end();
   lazyRenders[key] = [next];
 }
+
+function sendIndexHTML(res) {
+  fs.readFile(STATIC_DIR + '/index.html', 'utf-8', function(err, html) {
+    if (err) return res.send(500);
+    res.send(html);
+  });
+}
+
+app.get('/popular', function(req, res) {
+  sendIndexHTML(res);
+});
+
+app.get('/recent-favorites', function(req, res) {
+  sendIndexHTML(res);
+});
+
+app.get('/p/:id', function(req, res) {
+  var key = req.param('id', 'nonexistent');
+  ppt.pageExists(key, function(exists) {
+    if (!exists)
+      return res.send(404);
+    sendIndexHTML(res);
+  });
+});
 
 app.use('/images/', function(req, res, next) {
   var match = req.path.match(/\/([A-Za-z0-9]+)\.png/);
@@ -85,6 +111,16 @@ app.get('/favorites/activity', function(req, res) {
     res.send(list);
   });
 });
+app.get('/favorites/scores', function(req, res) {
+  var keys = req.param('keys', null);
+  if (!keys)
+    return res.send(400);
+  faves.scoresForKeys(keys.split(','), function(err, pagesWithScores) {
+    if (err)
+      return res.send(500);
+    res.send(pagesWithScores);
+  });
+});
 app.get('/stats', function(req, res) {
   ppt.getUniquePageCount(function(err, count) {
     if (err)
@@ -113,7 +149,7 @@ app.get('/unique/:start/:count', function(req, res) {
     });
   });
 });
-app.use(express.static(__dirname + '/static'));
+app.use(express.static(STATIC_DIR));
 app.listen(config.appPort, function() {
   console.log('app listening on port', config.appPort);
 });
