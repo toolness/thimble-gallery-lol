@@ -109,7 +109,7 @@ function HashFinder(options) {
   };
 }
 
-function UniqueHashTracker(options) {
+function UniquePageTracker(options) {
   var hashFinder = options.hashFinder,
       client = hashFinder.client,
       REDIS_PREFIX = 'unique:' + hashFinder.thimbleHostname + ':',
@@ -230,7 +230,7 @@ function PublishedPageTracker(options) {
 module.exports = PublishedPageTracker;
 PublishedPageTracker.makeRedisClient = makeRedisClient;
 PublishedPageTracker.HashFinder = HashFinder;
-PublishedPageTracker.UniqueHashTracker = UniqueHashTracker;
+PublishedPageTracker.UniquePageTracker = UniquePageTracker;
 
 if (!module.parent)
   PublishedPageTracker({verbose: true});

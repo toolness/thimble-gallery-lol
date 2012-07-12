@@ -7,7 +7,7 @@ describe('published-page-tracker', function() {
     idToKey: function(id) { return 'page_' + id; }
   });
   
-  var uniqueHashTracker = PublishedPageTracker.UniqueHashTracker({
+  var uniquePageTracker = PublishedPageTracker.UniquePageTracker({
     hashFinder: hashFinder
   });
   
@@ -15,36 +15,36 @@ describe('published-page-tracker', function() {
     hashFinder.flushAllHashes(function(err) {
       if (err)
         return done(err);
-      uniqueHashTracker.flush(done);
+      uniquePageTracker.flush(done);
     });
   });
   
-  it('should read and write hashes', function(done) {
-    hashFinder.hashExists("BOOP", function(exists) {
+  it('should read and write page hashes', function(done) {
+    hashFinder.hashExists("page_1", function(exists) {
       expect(exists).to.be(false);
-      hashFinder.writeHash("BOOP", "u", function(err) {
+      hashFinder.writeHash("page_1", "hash_a", function(err) {
         expect(err).to.be(null);
-        hashFinder.readHash("BOOP", function(err, hash) {
+        hashFinder.readHash("page_1", function(err, hash) {
           expect(err).to.be(null);
-          expect(hash).to.be("u");
+          expect(hash).to.be("hash_a");
           done();
         });
       });
     });
   });
 
-  it('should track hashes when no pages exist', function(done) {
-    uniqueHashTracker.update(function(err, lastId) {
+  it('should not explode when no pages exist', function(done) {
+    uniquePageTracker.update(function(err, lastId) {
       if (err) return done(err);
       expect(lastId).to.be(0);
       done();
     });
   });
   
-  it('should track hashes when one page exists', function(done) {
+  it('should track pages when one page exists', function(done) {
     hashFinder.writeHash('page_1', 'hash_a', function(err) {
       if (err) return done(err);
-      uniqueHashTracker.update(function(err, lastId) {
+      uniquePageTracker.update(function(err, lastId) {
         if (err) return done(err);
         expect(lastId).to.be(1);
         done();
@@ -52,15 +52,15 @@ describe('published-page-tracker', function() {
     });
   });
 
-  it('should track hashes when two different pages exist', function(done) {
+  it('should track pages when two different ones exist', function(done) {
     hashFinder.writeHash('page_1', 'hash_a', function(err) {
       if (err) return done(err);
       hashFinder.writeHash('page_2', 'hash_b', function(err) {
         if (err) return done(err);
-        uniqueHashTracker.update(function(err, lastId) {
+        uniquePageTracker.update(function(err, lastId) {
           if (err) return done(err);
           expect(lastId).to.be(2);
-          uniqueHashTracker.getSlice(0, -1, function(err, pages) {
+          uniquePageTracker.getSlice(0, -1, function(err, pages) {
             if (err) return done(err);
             expect(pages).to.be.eql(['page_1', 'page_2']);
             done();
@@ -70,15 +70,15 @@ describe('published-page-tracker', function() {
     });
   });
 
-  it('should track hashes when two identical pages exist', function(done) {
+  it('should track pages when two identical ones exist', function(done) {
     hashFinder.writeHash('page_1', 'hash_a', function(err) {
       if (err) return done(err);
       hashFinder.writeHash('page_2', 'hash_a', function(err) {
         if (err) return done(err);
-        uniqueHashTracker.update(function(err, lastId) {
+        uniquePageTracker.update(function(err, lastId) {
           if (err) return done(err);
           expect(lastId).to.be(2);
-          uniqueHashTracker.getSlice(0, -1, function(err, pages) {
+          uniquePageTracker.getSlice(0, -1, function(err, pages) {
             if (err) return done(err);
             expect(pages).to.be.eql(['page_1']);
             done();
