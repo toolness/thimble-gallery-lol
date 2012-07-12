@@ -213,6 +213,8 @@ function PublishedPageTracker(options) {
   getNextBatch(start);
 
   return {
+    client: hashFinder.client,
+    thimbleHostname: hashFinder.thimbleHostname,
     pageExists: hashFinder.hashExists,
     getUniquePageCount: uniquePageTracker.getLength,
     getUniquePageSlice: uniquePageTracker.getSlice

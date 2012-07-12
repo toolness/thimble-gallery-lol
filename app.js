@@ -2,11 +2,12 @@ var express = require('express'),
     fs = require('fs'),
     http = require('http'),
     config = require('./config'),
+    Favorites = require('./favorites'),
     PublishedPageTracker = require('./published-page-tracker'),
     app = express.createServer(),
-    lazyRenders = {};
-
-var ppt = PublishedPageTracker();
+    lazyRenders = {},
+    ppt = PublishedPageTracker(),
+    faves = Favorites(ppt.client, ppt.thimbleHostname);
 
 if (config.auth)
   app.use(express.basicAuth(function(username, password) {
@@ -60,6 +61,30 @@ app.use('/images/', function(req, res, next) {
   return next();
 });
 app.use('/images', express.static(config.imageDir));
+app.post('/favorite/:id', function(req, res) {
+  faves.favorite(req.param('id'), function(err) {
+    if (err) return res.send(500);
+    res.send('Thanks!');
+  });
+});
+app.post('/unfavorite/:id', function(req, res) {
+  faves.unfavorite(req.param('id'), function(err) {
+    if (err) return res.send(500);
+    res.send('Thanks!');
+  });
+});
+app.get('/favorites/popular', function(req, res) {
+  faves.getMostPopular(function(err, list) {
+    if (err) return res.send(500);
+    res.send(list);
+  });
+});
+app.get('/favorites/activity', function(req, res) {
+  faves.getRecentActivity(function(err, list) {
+    if (err) return res.send(500);
+    res.send(list);
+  });
+});
 app.get('/stats', function(req, res) {
   ppt.getUniquePageCount(function(err, count) {
     if (err)
@@ -85,4 +110,6 @@ app.get('/unique/:start/:count', function(req, res) {
   });
 });
 app.use(express.static(__dirname + '/static'));
-app.listen(config.appPort);
+app.listen(config.appPort, function() {
+  console.log('app listening on port', config.appPort);
+});
