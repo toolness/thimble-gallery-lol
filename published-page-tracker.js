@@ -178,6 +178,14 @@ function UniquePageTracker(options) {
     });
   };
   
+  self.getLength = function(cb) {
+    client.zcard(SORTEDSET_KEY, function(err, count) {
+      if (err)
+        return cb(err);
+      cb(null, parseInt(count));
+    });
+  };
+  
   self.flush = function(cb) {
     client.del([LASTID_KEY, SORTEDSET_KEY], cb);
   };
@@ -191,31 +199,26 @@ function PublishedPageTracker(options) {
   var start = options.startIndex || 1,
       batchSize = options.batchSize || 10,
       retryDelay = options.retryDelay || 30000,
-      allHashes = {},
-      uniqueHashes = 0,
-      hashFinder = options.hashFinder || HashFinder();
+      hashFinder = options.hashFinder || HashFinder(),
+      uniquePageTracker = UniquePageTracker({hashFinder: hashFinder});
   
   function getNextBatch(i) {
     hashFinder.findManyHashes(i, batchSize, function(errors, hashes) {
-      Object.keys(hashes).forEach(function(key) {
-        var hash = hashes[key];
-        if (!(hash in allHashes)) {
-          allHashes[hash] = key;
-          uniqueHashes++;
-        }
-      });
       if (options.verbose)
         console.log("got hashes for " + i + " thru " + (i+batchSize) +
-                    "; " + uniqueHashes + " uniques, " + errors.length + 
-                    " errors.");
-      if (errors.length) {
-        if (options.verbose)
-          console.log("retrying in " + retryDelay + " ms.");
-        setTimeout(function() {
-          getNextBatch(i);
-        }, retryDelay);
-      } else
-        getNextBatch(i+batchSize);
+                    "; " + errors.length + " errors.");
+      uniquePageTracker.update(function(err, lastId) {
+        if (err)
+          console.log("unique page tracker failed to update: " + err);
+        if (errors.length) {
+          if (options.verbose)
+            console.log("retrying in " + retryDelay + " ms.");
+          setTimeout(function() {
+            getNextBatch(i);
+          }, retryDelay);
+        } else
+          getNextBatch(i+batchSize);
+      });
     });
   }
   
@@ -223,7 +226,8 @@ function PublishedPageTracker(options) {
 
   return {
     pageExists: hashFinder.hashExists,
-    allHashes: allHashes
+    getUniquePageCount: uniquePageTracker.getLength,
+    getUniquePageSlice: uniquePageTracker.getSlice
   };
 }
 

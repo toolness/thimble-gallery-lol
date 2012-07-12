@@ -37,7 +37,11 @@ describe('published-page-tracker', function() {
     uniquePageTracker.update(function(err, lastId) {
       if (err) return done(err);
       expect(lastId).to.be(0);
-      done();
+      uniquePageTracker.getLength(function(err, count) {
+        if (err) return done(err);
+        expect(count).to.be(0);
+        done();
+      });
     });
   });
   
@@ -47,7 +51,11 @@ describe('published-page-tracker', function() {
       uniquePageTracker.update(function(err, lastId) {
         if (err) return done(err);
         expect(lastId).to.be(1);
-        done();
+        uniquePageTracker.getLength(function(err, count) {
+          if (err) return done(err);
+          expect(count).to.be(1);
+          done();
+        });
       });
     });
   });

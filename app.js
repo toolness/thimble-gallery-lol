@@ -61,8 +61,12 @@ app.use('/images/', function(req, res, next) {
 });
 app.use('/images', express.static(config.imageDir));
 app.get('/stats', function(req, res) {
-  res.send({
-    uniques: Object.keys(ppt.allHashes).length
+  ppt.getUniquePageCount(function(err, count) {
+    if (err)
+      return res.send(500);
+    res.send({
+      uniques: count
+    });
   });
 });
 app.get('/unique/:start/:count', function(req, res) {
@@ -71,15 +75,14 @@ app.get('/unique/:start/:count', function(req, res) {
   var start = parseInt(req.param('start', '0'));
   if (isNaN(count) || count <= 0 || count > MAX_COUNT)
     count = MAX_COUNT;
-  if (isNaN(start))
+  if (isNaN(start) || start < 0)
     start = 0;
-  var end = start + count;
-  if (start < 0 && end >= 0)
-    end = undefined;
-  var chunk = Object.keys(ppt.allHashes).slice(start, end);
-  res.send(chunk.map(function(hash) {
-    return ppt.allHashes[hash];
-  }));
+  var end = start + count - 1;
+  ppt.getUniquePageSlice(start, end, function(err, pages) {
+    if (err)
+      return res.send(500);
+    res.send(pages);
+  });
 });
 app.use(express.static(__dirname + '/static'));
 app.listen(config.appPort);
