@@ -93,14 +93,96 @@ function HashFinder(options) {
     hashExists: hashExists,
     readHash: readHash,
     writeHash: writeHash,
+    thimbleHostname: THIMBLE_URL.hostname,
+    idToKey: idToKey,
+    client: client,
     flushAllHashes: function(cb) {
       client.keys(REDIS_PREFIX + "*", function(err, keys) {
         if (err)
           return cb(err);
-        client.del(keys, function(err) { cb(err); });
+        if (keys.length)
+          client.del(keys, cb);
+        else
+          cb(null);
       });
     }
   };
+}
+
+function UniqueHashTracker(options) {
+  var hashFinder = options.hashFinder,
+      client = hashFinder.client,
+      REDIS_PREFIX = 'unique:' + hashFinder.thimbleHostname + ':',
+      LASTID_KEY = REDIS_PREFIX + 'lastId',
+      SORTEDSET_KEY = REDIS_PREFIX + 'set',
+      self = {};
+
+  function updateNextId(cb) {
+    client.get(LASTID_KEY, function(err, lastId) {
+      if (err)
+        return cb(err);
+      lastId = parseInt(lastId || '0');
+      var nextId = lastId + 1;
+      var nextKey = hashFinder.idToKey(nextId);
+      hashFinder.readHash(nextKey, function(err, hash) {
+        if (err)
+          return cb(err);
+        if (!hash)
+          // The hash doesn't exist yet, so we're done.
+          return cb(null, false, lastId);
+        client.zrank(SORTEDSET_KEY, hash, function(err, index) {
+          if (err)
+            return cb(err);
+          if (index === null) {
+            client.zadd(SORTEDSET_KEY, nextId, hash, function(err) {
+              if (err)
+                return cb(err);
+              client.incr(LASTID_KEY, function(err) {
+                if (err)
+                  return cb(err);
+                cb(null, true, nextId);
+              });
+            });
+          } else {
+            // A page with this exact content has already been published.
+            client.incr(LASTID_KEY, function(err) {
+              if (err)
+                return cb(err);
+              cb(null, true, nextId);
+            });
+          }
+        });
+      });
+    });
+  }
+  
+  self.update = function(cb) {
+    updateNextId(function(err, keepGoing, lastId) {
+      if (err)
+        return cb(err);
+      if (keepGoing)
+        return self.update(cb);
+      cb(null, lastId);
+    });
+  };
+  
+  self.getSlice = function(start, stop, cb) {
+    var args = [SORTEDSET_KEY, start, stop, "WITHSCORES"];
+    client.zrange(args, function(err, results) {
+      if (err)
+        return cb(err);
+      var pages = [];
+      for (var i = 1; i < results.length; i += 2)
+        pages.push(hashFinder.idToKey(parseInt(results[i])));
+      cb(null, pages);
+    });
+  };
+  
+  self.flush = function(cb) {
+    client.del([LASTID_KEY, SORTEDSET_KEY], cb);
+  };
+
+  return self;
 }
 
 function PublishedPageTracker(options) {
@@ -148,6 +230,7 @@ function PublishedPageTracker(options) {
 module.exports = PublishedPageTracker;
 PublishedPageTracker.makeRedisClient = makeRedisClient;
 PublishedPageTracker.HashFinder = HashFinder;
+PublishedPageTracker.UniqueHashTracker = UniqueHashTracker;
 
 if (!module.parent)
   PublishedPageTracker({verbose: true});
