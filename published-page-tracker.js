@@ -156,6 +156,8 @@ function UniquePageTracker(options) {
     });
   }
   
+  // NOTE: Multiple instantiations of this method should never be
+  // called simultaneously, or weird race conditions will occur!
   self.update = function(cb) {
     updateNextId(function(err, keepGoing, lastId) {
       if (err)
