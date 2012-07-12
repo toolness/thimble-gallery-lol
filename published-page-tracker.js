@@ -105,7 +105,7 @@ function PublishedPageTracker(options) {
         if (options.verbose)
           console.log("retrying in " + retryDelay + " ms.");
         setTimeout(function() {
-          getNextBatch(errors[0].id);
+          getNextBatch(i);
         }, retryDelay);
       } else
         getNextBatch(i+batchSize);
