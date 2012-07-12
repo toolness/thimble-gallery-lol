@@ -4,6 +4,7 @@ var App = Ember.Application.create();
 
 var ThimblePage = Ember.Object.extend({
   key: null,
+  score: null,
   viewURL: function() {
     return 'https://thimble.webmaker.org/p/' + this.get('key');
   }.property('key'),
@@ -27,9 +28,10 @@ function show(end) {
     $("#more").attr("href", "?p=" + start).show();
   $.getJSON('/unique/' + start + '/' + PAGE_SIZE, function(data) {
     data.reverse();
-    data.forEach(function(key) {
+    data.forEach(function(info) {
       App.thimblePageController.pages.pushObject(ThimblePage.create({
-        key: key
+        key: info[0],
+        score: info[1]
       }));
     });
   });

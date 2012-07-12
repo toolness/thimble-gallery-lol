@@ -51,13 +51,21 @@ describe('Favorites', function() {
         expect(now).to.be(2);
         faves.getRecentActivity(function(err, list) {
           if (err) done(err);
-          expect(list).to.be.eql(['b', 'a']);
+          expect(list).to.be.eql([['b', 1], ['a', 1]]);
           done();
         });
       });
     });
   });
 
+  it('should report scores of 0 for unscored keys', function(done) {
+    faves.scoresForKeys(['a', 'b'], function(err, list) {
+      if (err) done(err);
+      expect(list).to.be.eql([['a', 0], ['b', 0]]);
+      done();
+    });
+  });
+  
   it('should unfavorite', function(done) {
     faves.favorite('a', function(err) {
       if (err) done(err);

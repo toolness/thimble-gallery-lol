@@ -106,7 +106,11 @@ app.get('/unique/:start/:count', function(req, res) {
   ppt.getUniquePageSlice(start, end, function(err, pages) {
     if (err)
       return res.send(500);
-    res.send(pages);
+    faves.scoresForKeys(pages, function(err, pagesWithScores) {
+      if (err)
+        return res.send(500);
+      res.send(pagesWithScores);
+    });
   });
 });
 app.use(express.static(__dirname + '/static'));
