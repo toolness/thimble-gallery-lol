@@ -5,6 +5,10 @@ var App = Ember.Application.create();
 var ThimblePage = Ember.Object.extend({
   key: null,
   score: null,
+  isFavorite: null,
+  favoriteClass: function() {
+    return this.get('isFavorite') ? "icon-star" : "icon-star-empty";
+  }.property('isFavorite'),
   viewURL: function() {
     return 'https://thimble.webmaker.org/p/' + this.get('key');
   }.property('key'),

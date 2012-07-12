@@ -16,6 +16,21 @@
         width: 210px;
         height: 158px;
       }
+      
+      ul.thumbnails .actions {
+        position: relative;
+        text-align: right;
+      }
+      
+      ul.thumbnails .actions .icons {
+        position: absolute;
+        bottom: 0px;
+        left: 0px;
+      }
+      
+      ul.thumbnails .actions .icons i {
+        cursor: pointer;
+      }
     </style>
   </head>
 
@@ -57,7 +72,10 @@
               <img {{bindAttr src="thumbnailURL"}}>
             </a>
             <h5>{{key}}</h5>
-            <div style="text-align: right">
+            <div class="actions">
+              <div class="icons">
+                <i {{bindAttr class="favoriteClass"}}></i>
+              </div>
               <a {{bindAttr href="remixURL"}}
                class="btn btn-mini">Remix&hellip;</a>
             </div>
