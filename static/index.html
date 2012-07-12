@@ -53,8 +53,14 @@
         {{#each App.thimblePageController.pages}}
         <li class="span3">
           <div class="thumbnail">
-            <a {{bindAttr href="viewURL"}}><img
-              {{bindAttr src="thumbnailURL"}}></a>
+            <a {{bindAttr href="viewURL"}}>
+              <img {{bindAttr src="thumbnailURL"}}>
+            </a>
+            <h5>{{key}}</h5>
+            <div style="text-align: right">
+              <a {{bindAttr href="remixURL"}}
+               class="btn btn-mini">Remix&hellip;</a>
+            </div>
           </div>
         </li>
         {{/each}}

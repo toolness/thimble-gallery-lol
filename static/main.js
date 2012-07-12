@@ -7,6 +7,9 @@ var ThimblePage = Ember.Object.extend({
   viewURL: function() {
     return 'https://thimble.webmaker.org/p/' + this.get('key');
   }.property('key'),
+  remixURL: function() {
+    return this.get('viewURL') + '/edit';
+  }.property('key'),
   thumbnailURL: function() {
     return '/images/' + this.get('key') + '.png';
   }.property('key')
