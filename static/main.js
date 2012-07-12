@@ -20,10 +20,6 @@ var ThimblePage = Ember.Object.extend({
   }.property('key')
 });
 
-App.thimblePageController = Ember.Object.create({
-  pages: []
-});
-
 function show(end) {
   var start = end - PAGE_SIZE;
   if (start <= 0)
@@ -31,12 +27,36 @@ function show(end) {
   if (start > 1)
     $("#more").attr("href", "?p=" + start).show();
   $.getJSON('/unique/' + start + '/' + PAGE_SIZE, function(data) {
+    var thumbnails = Ember.View.create({
+      templateName: 'thumbnails',
+      pages: [],
+      toggleFavorite: function(event) {
+        var page = event.context;
+        page.set('isFavorite', !page.get('isFavorite'));
+      }
+    }).appendTo('#thumbnails-splat');
     data.reverse();
     data.forEach(function(info) {
-      App.thimblePageController.pages.pushObject(ThimblePage.create({
+      var FAVORITE_KEY = 'ThimblePage_favorite_' + info[0];
+      var page = ThimblePage.create({
         key: info[0],
-        score: info[1]
-      }));
+        score: info[1],
+        isFavorite: FAVORITE_KEY in localStorage
+      });
+      page.addObserver('isFavorite', function() {
+        if (this.get('isFavorite')) {
+          try { localStorage[FAVORITE_KEY] = "YUP"; } catch (e) {}
+          jQuery.post('/favorite/' + this.get('key'), function() {
+            page.set('score', page.get('score') + 1);
+          });
+        } else {
+          delete localStorage[FAVORITE_KEY];
+          jQuery.post('/unfavorite/' + this.get('key'), function() {
+            page.set('score', page.get('score') - 1);
+          });
+        }
+      });
+      thumbnails.pages.pushObject(page);
     });
   });
 }

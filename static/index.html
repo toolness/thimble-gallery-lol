@@ -31,6 +31,13 @@
       ul.thumbnails .actions .icons i {
         cursor: pointer;
       }
+      
+      ul.thumbnails .actions .icons i.icon-star,
+      ul.thumbnails .actions .icons i.icon-star-empty {
+        padding-left: 10px;
+        font-style: normal;
+        color: gray;
+      }
     </style>
   </head>
 
@@ -63,33 +70,36 @@
           and featureless.</p>
       </div>
 
-      <script type="text/x-handlebars">
-      <ul class="thumbnails">
-        {{#each App.thimblePageController.pages}}
-        <li class="span3">
-          <div class="thumbnail">
-            <a {{bindAttr href="viewURL"}}>
-              <img {{bindAttr src="thumbnailURL"}}>
-            </a>
-            <h5>{{key}}</h5>
-            <div class="actions">
-              <div class="icons">
-                <i {{bindAttr class="favoriteClass"}}></i>
-              </div>
-              <a {{bindAttr href="remixURL"}}
-               class="btn btn-mini">Remix&hellip;</a>
-            </div>
-          </div>
-        </li>
-        {{/each}}
-      </ul>
-      </script>
-      
+      <div id="thumbnails-splat"></div>
       <hr>
 
       <a href="" id="more" class="btn btn-inverse" style="display: none; float: right;">More&hellip;</a>
       
     </div> <!-- /container -->
+
+    <!-- Le templates -->
+    <script type="text/x-handlebars" data-template-name="thumbnails">
+    <ul class="thumbnails">
+      {{#each pages}}
+      <li class="span3">
+        <div class="thumbnail">
+          <a {{bindAttr href="viewURL"}}>
+            <img {{bindAttr src="thumbnailURL"}}>
+          </a>
+          <h5>{{key}}</h5>
+          <div class="actions">
+            <div class="icons">
+              <i {{action "toggleFavorite" on="click"}}
+                 {{bindAttr class="favoriteClass"}}>{{score}}</i>
+            </div>
+            <a {{bindAttr href="remixURL"}}
+             class="btn btn-mini">Remix&hellip;</a>
+          </div>
+        </div>
+      </li>
+      {{/each}}
+    </ul>
+    </script>
     
     <!-- Le javascript
     ================================================== -->
