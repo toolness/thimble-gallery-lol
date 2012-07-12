@@ -73,7 +73,11 @@ describe('Favorites', function() {
         faves.getMostPopular(function(err, list) {
           if (err) done(err);
           expect(list).to.be.eql([]);
-          done();
+          faves.getRecentActivity(function(err, list) {
+            if (err) done(err);
+            expect(list).to.be.eql([]);
+            done();
+          });
         });
       });
     });

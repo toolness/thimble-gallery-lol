@@ -56,7 +56,12 @@ module.exports = function Favorites(client, namespace, now) {
   self.getRecentActivity = function(cb) {
     client.zrevrange([TIME_KEY, 0, -1], function(err, list) {
       if (err) return cb(err);
-      return self.scoresForKeys(list, cb);
+      self.scoresForKeys(list, function(err, keysWithScores) {
+        if (err) return cb(err);
+        cb(null, keysWithScores.filter(function(pair) {
+          return pair[1] > 0;
+        }));
+      });
     });
   };
 
