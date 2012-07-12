@@ -2,22 +2,15 @@ var rebase = require('./rebase'),
     https = require('https'),
     redis = require('redis'),
     url = require('url'),
+    redisUtils = require('./redis-utils'),
     globalConfig = require('./config');
-
-function makeRedisClient(config) {
-  var client = redis.createClient(config.port, config.host);
-  client.on('error', function(err) {
-    console.log("REDIS ERROR", err);
-  });
-  return client;
-}
 
 function HashFinder(options) {
   options = options || {};
 
   var idToKey = options.idToKey || rebase,
       baseThimbleURL = options.baseThimbleURL || globalConfig.baseThimbleURL,
-      client = options.client || makeRedisClient(globalConfig.redis);
+      client = options.client || redisUtils.makeClient(globalConfig.redis);
 
   var THIMBLE_URL = url.parse(baseThimbleURL),
       REDIS_PREFIX = THIMBLE_URL.hostname + ':';
@@ -97,14 +90,7 @@ function HashFinder(options) {
     idToKey: idToKey,
     client: client,
     flushAllHashes: function(cb) {
-      client.keys(REDIS_PREFIX + "*", function(err, keys) {
-        if (err)
-          return cb(err);
-        if (keys.length)
-          client.del(keys, cb);
-        else
-          cb(null);
-      });
+      redisUtils.flushKeys(client, REDIS_PREFIX + "*", cb);
     }
   };
 }
@@ -234,7 +220,6 @@ function PublishedPageTracker(options) {
 }
 
 module.exports = PublishedPageTracker;
-PublishedPageTracker.makeRedisClient = makeRedisClient;
 PublishedPageTracker.HashFinder = HashFinder;
 PublishedPageTracker.UniquePageTracker = UniquePageTracker;
 
