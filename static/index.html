@@ -66,6 +66,10 @@
               <li class="nav-your-favorites">
                 <a href="/your-favorites">Your Favorites</a>
               </li>
+              <li>
+                <a href="#find-page" data-toggle="modal">Find a
+                  Page&hellip;</a>
+              </li>
             </ul>
           </div><!--/.nav-collapse -->
         </div>
@@ -87,6 +91,22 @@
       
     </div> <!-- /container -->
 
+    <div class="modal hide fade" id="find-page">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">×</button>
+        <h3>Find a Page</h3>
+      </div>
+      <div class="modal-body">
+        <p>Paste the URL of a published Thimble page below and we'll let you
+          favorite it and stuff.</p>
+        <input type="text" style="width: 90%"
+         placeholder="https://thimble.webmaker.org/p/">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary">Find It!</button>
+      </div>
+    </div>
+    
     <!-- Le templates -->
     <script type="text/x-handlebars" data-template-name="thumbnails">
     <ul class="thumbnails">
@@ -116,6 +136,7 @@
     <!-- Placed at the end of the document so the pages load faster -->
     <script src="/jquery.min.js"></script>
     <script src="/ember.min.js"></script>
+    <script src="/bootstrap/js/bootstrap.min.js"></script>
     <script src="/main.js"></script>
   </body>
 </html>

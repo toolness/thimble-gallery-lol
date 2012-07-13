@@ -87,6 +87,14 @@ $(window).ready(function() {
     function($0, $1, $2, $3) { queryString[$1] = decodeURIComponent($3); }
   );
   
+  $("#find-page button").click(function() {
+    var query = $("#find-page input").val(),
+        match = query.match(/\/p\/([A-Za-z0-9]+)/);
+    if (!match)
+      return alert('Alas, that does not seem to be a valid Thimble URL.');
+    location.href = "/p/" + match[1];
+  });
+  
   $.getJSON('/stats', function(stats) {
     $("#page-count").text(addCommas(stats.uniques));
     if (location.pathname == '/' || location.pathname == '/index.html') {
