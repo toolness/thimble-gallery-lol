@@ -87,7 +87,7 @@ $(window).ready(function() {
     function($0, $1, $2, $3) { queryString[$1] = decodeURIComponent($3); }
   );
   
-  $("#find-page button").click(function() {
+  $("#find-page button.btn-primary").click(function() {
     var query = $("#find-page input").val(),
         match = query.match(/\/p\/([A-Za-z0-9]+)/);
     if (!match)
